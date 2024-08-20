@@ -1,4 +1,5 @@
 #include "TextureManager.h"
+#include <iostream>
 
 std::map<std::string, Texture*> TextureManager::textures;
 

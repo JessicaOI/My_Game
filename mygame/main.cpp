@@ -2,6 +2,7 @@
 #include <SDL.h>
 #include <entt/entt.hpp>
 #include "TextureManager.h"
+#include <iostream>
 
 // Definiciones de constantes
 const int SCREEN_WIDTH = 640;
@@ -33,10 +34,12 @@ void RenderBackgroundSystem(entt::registry& registry, SDL_Renderer* renderer) {
         auto& pos = view.get<BackgroundPosition>(entity);
         auto& tex = view.get<BackgroundTexture>(entity);
 
-        SDL_Rect dstRect = { static_cast<int>(pos.x), static_cast<int>(pos.y), tex.width, tex.height };
+        // Escalar la textura al tamaño completo de la ventana
+        SDL_Rect dstRect = { static_cast<int>(pos.x), static_cast<int>(pos.y), SCREEN_WIDTH, SCREEN_HEIGHT };
         SDL_RenderCopy(renderer, tex.texture, NULL, &dstRect);
     }
 }
+
 
 // Sistema de actualización para el parallax
 void UpdateParallaxSystem(entt::registry& registry, float dT) {
@@ -55,14 +58,37 @@ void UpdateParallaxSystem(entt::registry& registry, float dT) {
 
 int main() {
     // Inicialización de SDL y creación de la ventana y el renderer
-    SDL_Init(SDL_INIT_VIDEO);
+    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+        std::cerr << "Error initializing SDL: " << SDL_GetError() << std::endl;
+        return -1;
+    }
+
     SDL_Window* window = SDL_CreateWindow("Snake Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
+    if (!window) {
+        std::cerr << "Error creating window: " << SDL_GetError() << std::endl;
+        SDL_Quit();
+        return -1;
+    }
+
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    if (!renderer) {
+        std::cerr << "Error creating renderer: " << SDL_GetError() << std::endl;
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        return -1;
+    }
 
     entt::registry registry;
 
     // Cargar la textura del fondo utilizando el TextureManager
-    auto bgTexture = TextureManager::LoadTexture("background.png", renderer);
+    auto bgTexture = TextureManager::LoadTexture("background.bmp", renderer);
+    if (!bgTexture) {
+        std::cerr << "Error loading texture: " << SDL_GetError() << std::endl;
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        return -1;
+    }
 
     // Crear una entidad para el fondo
     auto bgEntity = registry.create();
@@ -70,7 +96,7 @@ int main() {
     registry.emplace<BackgroundTexture>(bgEntity, bgTexture->sdlTexture, bgTexture->width, bgTexture->height);
 
     // Opcional: añadir parallax
-    registry.emplace<ParallaxEffect>(bgEntity, 50.0f, 0.0f);
+    //registry.emplace<ParallaxEffect>(bgEntity, 50.0f, 0.0f);
 
     bool running = true;
     SDL_Event event;
@@ -91,10 +117,11 @@ int main() {
         // Actualizar sistemas
         UpdateParallaxSystem(registry, deltaTime);
 
-        // Renderizar
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        // Cambiar el color de fondo a verde oscuro
+        SDL_SetRenderDrawColor(renderer, 0, 100, 0, 255); // Verde oscuro
         SDL_RenderClear(renderer);
 
+        // Renderizar el fondo
         RenderBackgroundSystem(registry, renderer);
 
         SDL_RenderPresent(renderer);
