@@ -15,8 +15,9 @@ include(FetchContent)
 FetchContent_Declare(
         entt
         GIT_REPOSITORY https://github.com/skypjack/entt.git
-        GIT_TAG v3.11.1  # Cambia a la última versión disponible si es necesario
+        GIT_TAG v3.11.1  # Ajusta la versión según lo que quieras usar
 )
+
 FetchContent_MakeAvailable(entt)
 
 # Crear el ejecutable

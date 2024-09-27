@@ -1,4 +1,23 @@
 "C:\Program Files\JetBrains\CLion 2024.1.4\bin\cmake\win\x64\bin\cmake.exe" -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_MAKE_PROGRAM=C:/Program Files/JetBrains/CLion 2024.1.4/bin/ninja/win/x64/ninja.exe" -G Ninja -S C:\Users\jessi\OneDrive\Documents\GitHub\My_Game\mygame -B C:\Users\jessi\OneDrive\Documents\GitHub\My_Game\mygame\cmake-build-debug
--- Configuring done (1.0s)
--- Generating done (0.0s)
--- Build files have been written to: C:/Users/jessi/OneDrive/Documents/GitHub/My_Game/mygame/cmake-build-debug
+[0/7] Performing update step for 'entt-populate'
+CMake Error at C:/Users/jessi/OneDrive/Documents/GitHub/My_Game/mygame/cmake-build-debug/_deps/entt-subbuild/entt-populate-prefix/tmp/entt-populate-gitupdate.cmake:34 (message):
+  Failed to get the hash for HEAD:
+
+  fatal: not a git repository: '.git'
+
+
+
+FAILED: entt-populate-prefix/src/entt-populate-stamp/entt-populate-update C:/Users/jessi/OneDrive/Documents/GitHub/My_Game/mygame/cmake-build-debug/_deps/entt-subbuild/entt-populate-prefix/src/entt-populate-stamp/entt-populate-update 
+C:\WINDOWS\system32\cmd.exe /C "cd /D C:\Users\jessi\OneDrive\Documents\GitHub\My_Game\mygame\cmake-build-debug\_deps\entt-src && "C:\Program Files\JetBrains\CLion 2024.1.4\bin\cmake\win\x64\bin\cmake.exe" -Dcan_fetch=YES -P C:/Users/jessi/OneDrive/Documents/GitHub/My_Game/mygame/cmake-build-debug/_deps/entt-subbuild/entt-populate-prefix/tmp/entt-populate-gitupdate.cmake"
+ninja: build stopped: subcommand failed.
+
+CMake Error at C:/Program Files/JetBrains/CLion 2024.1.4/bin/cmake/win/x64/share/cmake-3.28/Modules/FetchContent.cmake:1679 (message):
+  Build step for entt failed: 1
+Call Stack (most recent call first):
+  C:/Program Files/JetBrains/CLion 2024.1.4/bin/cmake/win/x64/share/cmake-3.28/Modules/FetchContent.cmake:1819:EVAL:2 (__FetchContent_directPopulate)
+  C:/Program Files/JetBrains/CLion 2024.1.4/bin/cmake/win/x64/share/cmake-3.28/Modules/FetchContent.cmake:1819 (cmake_language)
+  C:/Program Files/JetBrains/CLion 2024.1.4/bin/cmake/win/x64/share/cmake-3.28/Modules/FetchContent.cmake:2033 (FetchContent_Populate)
+  CMakeLists.txt:21 (FetchContent_MakeAvailable)
+
+
+-- Configuring incomplete, errors occurred!
