@@ -140,17 +140,24 @@ void CheckCollisionWithApple(entt::registry& registry, int& appleCounter) {
         for (auto appleEntity : appleView) {
             auto& apple = appleView.get<Apple>(appleEntity);
 
+            // Asegurarse de que la cabeza de la serpiente y la manzana estén alineadas en la cuadrícula
+            int snakeX = (snake.position.x / TILE_SIZE) * TILE_SIZE;
+            int snakeY = (snake.position.y / TILE_SIZE) * TILE_SIZE;
+            int appleX = (apple.position.x / TILE_SIZE) * TILE_SIZE;
+            int appleY = (apple.position.y / TILE_SIZE) * TILE_SIZE;
+
             // Verificar si la cabeza de la serpiente está en la misma posición que la manzana
-            if (snake.position.x == apple.position.x && snake.position.y == apple.position.y) {
+            if (snakeX == appleX && snakeY == appleY) {
                 std::cout << "¡Manzana comida! Contador: " << ++appleCounter << std::endl;
 
-                // Generar nueva manzana en una posición aleatoria
+                // Generar nueva manzana en una posición aleatoria alineada con la cuadrícula
                 apple.position.x = (rand() % (SCREEN_WIDTH / TILE_SIZE)) * TILE_SIZE;
                 apple.position.y = (rand() % (SCREEN_HEIGHT / TILE_SIZE)) * TILE_SIZE;
             }
         }
     }
 }
+
 
 // Sistema para renderizar el fondo
 void RenderBackgroundSystem(entt::registry& registry, SDL_Renderer* renderer) {
