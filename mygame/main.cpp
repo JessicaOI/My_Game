@@ -12,6 +12,7 @@ const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 const int TILE_SIZE = 32;
 const float MOVE_DELAY = 0.15f;  // Delay entre movimientos en segundos
+const float ROCK_TIMER = 15.0f;  // Tiempo para cambiar las rocas de lugar
 
 // Direcciones de movimiento
 enum Direction { UP, DOWN, LEFT, RIGHT };
@@ -44,6 +45,88 @@ struct Apple {
     SDL_Point position;
     SDL_Texture* texture;
 };
+
+// Componente para las rocas
+struct Rock {
+    std::vector<SDL_Point> positions; // Posiciones de las rocas
+    SDL_Texture* texture;
+    float timer = 0.0f; // Temporizador para cambiar la posición de las rocas
+};
+
+// Sistema de generación de rocas
+void GenerateRock(entt::registry& registry, SDL_Texture* rockTexture) {
+    auto view = registry.view<Rock>();
+    if (view.empty()) {
+        auto rockEntity = registry.create();
+        registry.emplace<Rock>(rockEntity, std::vector<SDL_Point>(), rockTexture);
+    }
+
+    auto rockEntity = view.front();
+    auto& rock = registry.get<Rock>(rockEntity);
+
+    // Limitar las posiciones aleatorias para asegurarse de que no se salgan de la pantalla
+    int startX = (rand() % ((SCREEN_WIDTH - 2 * TILE_SIZE) / TILE_SIZE)) * TILE_SIZE;
+    int startY = (rand() % ((SCREEN_HEIGHT - 2 * TILE_SIZE) / TILE_SIZE)) * TILE_SIZE;
+
+    // Colocar los tres tiles consecutivos en dirección horizontal o vertical
+    rock.positions.clear();
+    if (rand() % 2 == 0) {  // Horizontal
+        rock.positions.push_back({startX, startY});
+        rock.positions.push_back({startX + TILE_SIZE, startY});
+        rock.positions.push_back({startX + 2 * TILE_SIZE, startY});
+    } else {  // Vertical
+        rock.positions.push_back({startX, startY});
+        rock.positions.push_back({startX, startY + TILE_SIZE});
+        rock.positions.push_back({startX, startY + 2 * TILE_SIZE});
+    }
+
+    rock.texture = rockTexture;
+}
+
+
+// Sistema de actualización para cambiar las rocas de lugar cada 15 segundos
+void UpdateRockMovement(entt::registry& registry, float deltaTime, SDL_Texture* rockTexture) {
+    auto view = registry.view<Rock>();
+
+    for (auto entity : view) {
+        auto& rock = view.get<Rock>(entity);
+        rock.timer += deltaTime;
+
+        if (rock.timer >= ROCK_TIMER) {
+            // Cambiar la posición de las rocas después de 15 segundos
+            GenerateRock(registry, rockTexture);
+            rock.timer = 0.0f;  // Reiniciar el temporizador
+        }
+    }
+}
+
+// Sistema de renderizado para la roca
+void RenderRockSystem(entt::registry& registry, SDL_Renderer* renderer) {
+    auto view = registry.view<Rock>();
+
+    for (auto entity : view) {
+        auto& rock = view.get<Rock>(entity);
+
+        for (auto& pos : rock.positions) {
+            SDL_Rect dstRect = { pos.x, pos.y, TILE_SIZE, TILE_SIZE };
+            SDL_RenderCopy(renderer, rock.texture, NULL, &dstRect);
+        }
+    }
+}
+
+// Verificar colisión entre la serpiente y las rocas
+bool CheckCollisionWithRock(const SnakeBody& snake, const Rock& rock) {
+    SDL_Point head = snake.segments[0];
+
+    for (const auto& pos : rock.positions) {
+        // Verificamos si la cabeza está dentro de las dimensiones de la roca (32x32 px)
+        if (head.x < pos.x + TILE_SIZE && head.x + TILE_SIZE > pos.x &&
+            head.y < pos.y + TILE_SIZE && head.y + TILE_SIZE > pos.y) {
+            return true;
+            }
+    }
+    return false;
+}
 
 // Sistema de actualización del movimiento de la serpiente
 void UpdateSnakeMovement(entt::registry& registry, float deltaTime) {
@@ -284,8 +367,20 @@ int main() {
     auto appleEntity = registry.create();
     registry.emplace<Apple>(appleEntity, SDL_Point{160, 160}, appleTexture->sdlTexture);
 
-    int appleCounter = 0;
+    // Cargar la textura de las rocas
+    auto rockTexture = TextureManager::LoadTexture("roca.bmp", renderer);
+    if (!rockTexture) {
+        std::cerr << "Error loading rock texture: " << SDL_GetError() << std::endl;
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        return -1;
+    }
 
+    // Crear la entidad para las rocas
+    GenerateRock(registry, rockTexture->sdlTexture);  // Inicializar las primeras rocas
+
+    int appleCounter = 0;
     bool running = true;
     SDL_Event event;
     Uint32 lastTime = SDL_GetTicks();
@@ -325,10 +420,20 @@ int main() {
         // Verificar colisión con la manzana
         CheckCollisionWithApple(registry, appleCounter);
 
+        // Actualizar y mover las rocas cada 15 segundos
+        UpdateRockMovement(registry, deltaTime, rockTexture->sdlTexture);
+
         // Verificar colisión con el cuerpo
         auto& snake = registry.get<SnakeBody>(snakeEntity);
         if (CheckSelfCollision(snake)) {
             std::cout << "Colisión con el cuerpo. ¡Juego terminado!" << std::endl;
+            running = false;
+        }
+
+        // Verificar colisión con las rocas
+        auto& rock = registry.get<Rock>(registry.view<Rock>().front());
+        if (CheckCollisionWithRock(snake, rock)) {
+            std::cout << "Colisión con la roca. ¡Juego terminado!" << std::endl;
             running = false;
         }
 
@@ -339,6 +444,7 @@ int main() {
         RenderBackgroundSystem(registry, renderer);
         RenderSnakeSystem(registry, renderer);
         RenderAppleSystem(registry, renderer);
+        RenderRockSystem(registry, renderer);
 
         SDL_RenderPresent(renderer);
     }
