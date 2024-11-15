@@ -254,6 +254,56 @@ void RenderAppleSystem(entt::registry& registry, SDL_Renderer* renderer) {
     }
 }
 
+void PlayBackgroundMusic(const char* filePath) {
+    SDL_AudioSpec wavSpec;
+    Uint32 wavLength;
+    Uint8* wavBuffer;
+
+    if (SDL_LoadWAV(filePath, &wavSpec, &wavBuffer, &wavLength) == NULL) {
+        std::cerr << "Error al cargar archivo WAV de música de fondo: " << SDL_GetError() << std::endl;
+        return;
+    }
+
+    SDL_AudioDeviceID deviceId = SDL_OpenAudioDevice(NULL, 0, &wavSpec, NULL, 0);
+    if (deviceId == 0) {
+        std::cerr << "Error al abrir el dispositivo de audio: " << SDL_GetError() << std::endl;
+        SDL_FreeWAV(wavBuffer);
+        return;
+    }
+
+    SDL_QueueAudio(deviceId, wavBuffer, wavLength);
+    SDL_PauseAudioDevice(deviceId, 0); // Reproducir audio
+
+    // No bloqueamos con SDL_Delay; dejamos que el audio se reproduzca en segundo plano
+}
+
+
+// Función para reproducir un efecto de sonido
+void PlaySoundEffect(const char* filePath) {
+    SDL_AudioSpec wavSpec;
+    Uint32 wavLength;
+    Uint8* wavBuffer;
+
+    if (SDL_LoadWAV(filePath, &wavSpec, &wavBuffer, &wavLength) == NULL) {
+        std::cerr << "Error al cargar archivo WAV de efecto de sonido: " << SDL_GetError() << std::endl;
+        return;
+    }
+
+    SDL_AudioDeviceID deviceId = SDL_OpenAudioDevice(NULL, 0, &wavSpec, NULL, 0);
+    if (deviceId == 0) {
+        std::cerr << "Error al abrir el dispositivo de audio: " << SDL_GetError() << std::endl;
+        SDL_FreeWAV(wavBuffer);
+        return;
+    }
+
+    SDL_QueueAudio(deviceId, wavBuffer, wavLength);
+    SDL_PauseAudioDevice(deviceId, 0); // Reproducir audio
+
+    // No bloqueamos con SDL_Delay; el sonido se reproduce en segundo plano
+    SDL_FreeWAV(wavBuffer);
+}
+
+
 // Sistema para verificar la colisión entre la serpiente y la manzana
 void CheckCollisionWithApple(entt::registry& registry, int& appleCounter) {
     auto snakeView = registry.view<SnakeBody>();
@@ -273,6 +323,9 @@ void CheckCollisionWithApple(entt::registry& registry, int& appleCounter) {
             if (snakeX == appleX && snakeY == appleY) {
                 std::cout << "¡Manzana comida! Contador: " << ++appleCounter << std::endl;
                 snake.grow = true;
+
+                // Reproducir efecto de sonido al comer la manzana
+                PlaySoundEffect("comiendoManzana.wav");
 
                 // Generar nueva manzana en una posición aleatoria
                 apple.position.x = (rand() % (SCREEN_WIDTH / TILE_SIZE)) * TILE_SIZE;
@@ -310,10 +363,13 @@ int main() {
     srand(static_cast<unsigned int>(time(nullptr)));
 
     // Inicializar SDL
-    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) {
         std::cerr << "Error initializing SDL: " << SDL_GetError() << std::endl;
         return -1;
     }
+
+    // Reproducir música de fondo al iniciar el juego
+    PlayBackgroundMusic("fondo.wav");
 
     SDL_Window* window = SDL_CreateWindow("Snake Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
